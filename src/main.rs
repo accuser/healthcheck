@@ -17,16 +17,17 @@ async fn main() {
     let mut set = JoinSet::new();
 
     for url in args.urls {
-        set.spawn(async move {
-            let builder = Client::builder().user_agent("healthcheck".to_string());
-
-            if let Ok(client) = builder.build() {
+        if let Ok(client) = Client::builder()
+            .user_agent("healthcheck".to_string())
+            .build()
+        {
+            set.spawn(async move {
                 match client.head(url.to_string()).send().await {
                     Ok(_) => println!("🟢 {}", url),
                     Err(err) => println!("🔴 {} ({})", url, err.without_url()),
                 }
-            };
-        });
+            });
+        };
     }
 
     while let Some(_) = set.join_next().await {}
