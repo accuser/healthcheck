@@ -2,7 +2,6 @@ use clap::Parser;
 use reqwest::{Client, Url};
 use tokio::task::JoinSet;
 
-/// Simple program to greet a person
 #[derive(Parser, Debug)]
 #[command(version)]
 struct Args {
