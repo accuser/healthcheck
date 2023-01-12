@@ -27,9 +27,9 @@ async fn main() {
         futures.spawn(healthcheck(url));
     }
 
-    while let Some(res) = futures.join_next().await {
-        if let Ok(res) = res {
-            healthcheck_report(res, args.verbose)
+    while let Some(result) = futures.join_next().await {
+        if let Ok(response) = result {
+            healthcheck_report(response, args.verbose)
         }
     }
 }
