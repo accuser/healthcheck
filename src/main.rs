@@ -1,5 +1,8 @@
+mod commands;
+
 use clap::Parser;
-use reqwest::{Client, Url};
+use commands::*;
+use reqwest::Url;
 use tokio::task::JoinSet;
 
 #[derive(Parser, Debug)]
@@ -8,26 +11,25 @@ struct Args {
     /// URLs to check
     #[arg(required = true)]
     urls: Vec<Url>,
+
+    /// Use verbose output
+    #[arg(long, short)]
+    verbose: bool,
 }
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 10)]
 async fn main() {
     let args = Args::parse();
-    let mut set = JoinSet::new();
+
+    let mut futures = JoinSet::new();
 
     for url in args.urls {
-        if let Ok(client) = Client::builder()
-            .user_agent("healthcheck".to_string())
-            .build()
-        {
-            set.spawn(async move {
-                match client.head(url.to_string()).send().await {
-                    Ok(_) => println!("🟢 {}", url),
-                    Err(err) => println!("🔴 {} ({})", url, err.without_url()),
-                }
-            });
-        };
+        futures.spawn(healthcheck(url));
     }
 
-    while let Some(_) = set.join_next().await {}
+    while let Some(res) = futures.join_next().await {
+        if let Ok(res) = res {
+            healthcheck_report(res, args.verbose)
+        }
+    }
 }
